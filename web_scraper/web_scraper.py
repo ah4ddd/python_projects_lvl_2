@@ -1,43 +1,34 @@
-# Step 1: Import necessary modules
-import requests       # to fetch HTML from websites
-from bs4 import BeautifulSoup  # to parse HTML and extract content
-import csv            # to save data in CSV format
+# 1. Import modules
+import requests          # To talk to websites (send HTTP requests)
+from bs4 import BeautifulSoup  # To parse HTML and extract text
+import csv               # To save results in CSV files
 
-# Step 2: Ask user for input
-url = input("Paste the website URL to scrape: ")               # website link
-tag = input("Enter HTML tag to scrape (e.g., 'p', 'div', 'span'): ")  # HTML tag
-class_name = input("Enter class name (or leave empty if none): ")      # optional class
+# 2. Ask for URL
+url = input("Paste the website URL to scrape: ")
 
-# Step 3: Fetch the website content
-response = requests.get(url)  # send HTTP GET request to website
-if response.status_code == 200:  # check if request was successful
-    html = response.text
-    soup = BeautifulSoup(html, 'html.parser')  # parse HTML
-else:
-    print("Failed to retrieve website. Status code:", response.status_code)
-    exit()  # stop program if website cannot be loaded
+# 3. Send request
+response = requests.get(url)
+html_content = response.text
 
-# Step 4: Find all elements with the specified tag and optional class
-if class_name:
-    elements = soup.find_all(tag, class_=class_name)  # filter by class
-else:
-    elements = soup.find_all(tag)  # get all tags if class not specified
+# 4. Parse HTML
+soup = BeautifulSoup(html_content, 'html.parser')
 
-# Step 5: Extract text from elements
-data = []  # list to store text
-for element in elements:
-    text = element.get_text().strip()  # remove HTML tags and extra spaces
-    if text:  # skip empty text
-        data.append(text)
+# 5. Automatically pick main text tags
+text_tags = ['p', 'h1', 'h2', 'h3']  # paragraphs and headers
+elements = []
 
-# Step 6: Save the scraped data to CSV (append mode)
-filename = "scraped_data.csv"  # file name
-with open(filename, "a", newline="", encoding="utf-8") as file: #open or create file
+for tag in text_tags:
+    elements.extend(soup.find_all(tag))  # find all tags and add to list
+
+# 6. Clean text
+elements_text = [el.get_text().strip() for el in elements if el.get_text().strip() != ""]
+
+# 7. Save to CSV (append mode)
+with open("scraped_data.csv", "a", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
-    for row in data:
-        writer.writerow([row])  # save each text in a new row
+    for text in elements_text:
+        writer.writerow([text])
 
-# Step 7: Print scraped data in terminal
-print("\nScraped content:")
-for row in data:
-    print(row)
+# 8. Print results
+for text in elements_text:
+    print(text)
